@@ -1,1 +1,0 @@
-# BMA580_SensorAPI
