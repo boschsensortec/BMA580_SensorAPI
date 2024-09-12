@@ -31,8 +31,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 * @file       bma5.c
-* @date       2024-04-15
-* @version    v4.1.0
+* @date       2024-07-29
+* @version    v4.2.0
 *
 */
 
@@ -513,8 +513,6 @@ int8_t bma5_get_temp_conf(struct bma5_temp_conf *config, struct bma5_dev *dev)
             config->temp_rate = BMA5_GET_BITS_POS_0(reg_value, BMA5_TEMP_RATE);
             config->temp_meas_src = BMA5_GET_BITS(reg_value, BMA5_TEMP_MEAS_SRC);
             config->temp_ext_sel = BMA5_GET_BITS(reg_value, BMA5_TEMP_EXT_SEL);
-            config->temp_tcs = BMA5_GET_BITS(reg_value, BMA5_TEMP_TCS);
-            config->temp_tco = BMA5_GET_BITS(reg_value, BMA5_TEMP_TCO);
         }
     }
 
@@ -539,8 +537,6 @@ int8_t bma5_set_temp_conf(const struct bma5_temp_conf *config, struct bma5_dev *
         reg_value = BMA5_SET_BITS_POS_0(reg_value, BMA5_TEMP_RATE, config->temp_rate);
         reg_value = BMA5_SET_BITS(reg_value, BMA5_TEMP_MEAS_SRC, config->temp_meas_src);
         reg_value = BMA5_SET_BITS(reg_value, BMA5_TEMP_EXT_SEL, config->temp_ext_sel);
-        reg_value = BMA5_SET_BITS(reg_value, BMA5_TEMP_TCS, config->temp_tcs);
-        reg_value = BMA5_SET_BITS(reg_value, BMA5_TEMP_TCO, config->temp_tco);
 
         result = bma5_set_regs(BMA5_REG_TEMP_CONF, (const uint8_t *)&reg_value, sizeof(reg_value), dev);
     }
@@ -1279,22 +1275,23 @@ int8_t bma5_get_acc_doff(struct bma5_accel_doff *accel_doff, struct bma5_dev *de
     else
     {
         result = bma5_get_regs(BMA5_REG_ACC_OFFSET_0, reg_value, 6, dev);
+
         if (BMA5_OK == result)
         {
             acc_doff_7_0 = BMA5_GET_BITS_POS_0(reg_value[0], BMA5_ACC_DOFF_7_0);
             acc_doff_8 = BMA5_GET_BITS_POS_0(reg_value[1], BMA5_ACC_DOFF_8);
 
-            accel_doff->x_doff = (int16_t)(((uint16_t)acc_doff_8 << 8) | ((uint16_t)acc_doff_7_0));
+            accel_doff->x_doff = (int16_t)((((uint16_t)acc_doff_8 << 8) | ((uint16_t)acc_doff_7_0)) << 7) >> 7;
 
             acc_doff_7_0 = BMA5_GET_BITS_POS_0(reg_value[2], BMA5_ACC_DOFF_7_0);
             acc_doff_8 = BMA5_GET_BITS_POS_0(reg_value[3], BMA5_ACC_DOFF_8);
 
-            accel_doff->y_doff = (int16_t)(((uint16_t)acc_doff_8 << 8) | ((uint16_t)acc_doff_7_0));
+            accel_doff->y_doff = (int16_t)((((uint16_t)acc_doff_8 << 8) | ((uint16_t)acc_doff_7_0)) << 7) >> 7;
 
             acc_doff_7_0 = BMA5_GET_BITS_POS_0(reg_value[4], BMA5_ACC_DOFF_7_0);
             acc_doff_8 = BMA5_GET_BITS_POS_0(reg_value[5], BMA5_ACC_DOFF_8);
 
-            accel_doff->z_doff = (int16_t)(((uint16_t)acc_doff_8 << 8) | ((uint16_t)acc_doff_7_0));
+            accel_doff->z_doff = (int16_t)((((uint16_t)acc_doff_8 << 8) | ((uint16_t)acc_doff_7_0)) << 7) >> 7;
         }
     }
 

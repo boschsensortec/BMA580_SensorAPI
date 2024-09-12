@@ -50,12 +50,12 @@ int main(void)
     struct bma580_feat_eng_gpr_0 gpr_0;
     struct bma580_int_status_types int_status;
     uint8_t s_tap_count = 0, d_tap_count = 0, t_tap_count = 0;
-    enum bma5_context context;
 
     int_config.int_src = BMA5_INT_1;
     int_status.int_src = BMA580_INT_STATUS_INT1;
 
     /* Assign context parameter selection */
+    enum bma5_context context;
     context = BMA5_HEARABLE;
 
     /* Interface reference is given as a parameter
@@ -65,9 +65,10 @@ int main(void)
     rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
+    /* Initialize the BMA580 device instance */
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     printf("\nDefault configurations\n\n");
     rslt = bma580_get_default_tap_config(&conf, &dev);
@@ -145,6 +146,11 @@ int main(void)
     rslt = bma580_set_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_0", rslt);
 
+    if (rslt == BMA5_OK)
+    {
+        printf("Tap detection enabled\n");
+    }
+
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
 
@@ -164,6 +170,8 @@ int main(void)
     rslt = bma580_set_int_map(&int_map, &dev);
     bma5_check_rslt("bma580_set_int_map", rslt);
 
+    printf("\n\nMap tap to hardware interrupt pin 1\n");
+
     /* Map hardware interrupt pin configurations */
     rslt = bma5_get_int_conf(&int_config, n_ints, &dev);
     bma5_check_rslt("bma5_get_int_conf", rslt);
@@ -175,13 +183,20 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_ints, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
+    printf("\n\nInt Configurations:\n");
+    printf("Int1 mode: %s\n", enum_to_string(BMA5_INT1_MODE_LATCHED));
+    printf("Int1 OD: %s\n", enum_to_string(BMA5_INT1_OD_PUSH_PULL));
+    printf("Int1 Level: %s\n", enum_to_string(BMA5_INT1_LVL_ACTIVE_HIGH));
+
     printf("\n\nTap the board to detect single, double, triple taps\n");
 
     for (;;)
     {
+        /* Read the hardware interrupt pin 1 status */
         rslt = bma580_get_int_status(&int_status, n_status, &dev);
         bma5_check_rslt("bma580_get_int_status", rslt);
 
+        /* Checking interrupt status to check tap detection */
         if (int_status.int_status.stap_int_status & BMA5_ENABLE)
         {
             printf("Single Tap interrupt occurred\n");
@@ -192,6 +207,7 @@ int main(void)
             s_tap_count++;
         }
 
+        /* Checking interrupt status to check tap detection */
         if (int_status.int_status.dtap_int_status & BMA5_ENABLE)
         {
             printf("Double Tap interrupt occurred\n");
@@ -202,6 +218,7 @@ int main(void)
             d_tap_count++;
         }
 
+        /* Checking interrupt status to check tap detection */
         if (int_status.int_status.ttap_int_status & BMA5_ENABLE)
         {
             printf("Triple Tap interrupt occurred\n");

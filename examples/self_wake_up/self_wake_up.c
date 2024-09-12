@@ -36,6 +36,10 @@
 #include "common.h"
 #include "bma580_features.h"
 
+/* Enum for power modes */
+#define BMA580_POWER_MODE_LOW               0
+#define BMA580_SELF_WAKE_UP_STAT_LOW_POWER  1
+
 /******************************************************************************/
 int main(void)
 {
@@ -48,16 +52,17 @@ int main(void)
     struct bma580_int_map int_map = { 0 };
     struct bma5_int_conf_types int_config;
     struct bma580_feat_eng_gpr_0 gpr_0;
+    struct bma5_acc_conf acc_conf;
     struct bma580_feat_eng_gpr_1 gpr_1;
     struct bma580_feat_eng_gpr_2 gpr_2;
     struct bma580_int_status_types int_status;
     struct bma580_self_wakeup_config self_wake_up_config, get_self_wake_up_config;
-    enum bma5_context context;
 
     int_config.int_src = BMA5_INT_2;
     int_status.int_src = BMA580_INT_STATUS_INT2;
 
     /* Assign context parameter selection */
+    enum bma5_context context;
     context = BMA5_HEARABLE;
 
     /* Interface reference is given as a parameter
@@ -69,24 +74,26 @@ int main(void)
 
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     rslt = bma580_get_self_wakeup_config(&self_wake_up_config, &dev);
     bma5_check_rslt("bma580_get_self_wakeup_config", rslt);
 
-    self_wake_up_config.acc_odr = BMA5_ACC_ODR_HZ_100;
+    /* Set the self wake-up configuration */
+    self_wake_up_config.acc_odr = BMA5_ACC_ODR_HZ_50;
     self_wake_up_config.acc_bwp = BMA5_ACC_BWP_NORM_AVG4;
     self_wake_up_config.acc_perf_mode = BMA580_SELF_WAKE_UP_ACC_PERF_MODE_CIC_AVG;
 
     rslt = bma580_set_self_wakeup_config(&self_wake_up_config, &dev);
     bma5_check_rslt("bma580_set_self_wakeup_config", rslt);
 
+    printf("\nAccel Configurations\n");
+    printf("ODR: %s\t\n", enum_to_string(BMA5_ACC_ODR_HZ_50));
+    printf("BWP: %s\t\n", enum_to_string(BMA5_ACC_BWP_NORM_AVG4));
+    printf("Performance Mode: %s\t\n", enum_to_string(BMA580_SELF_WAKE_UP_ACC_PERF_MODE_CIC_AVG));
+
     rslt = bma580_get_self_wakeup_config(&get_self_wake_up_config, &dev);
     bma5_check_rslt("bma580_get_self_wakeup_config", rslt);
-
-    printf("get_self_wake_up_config.acc_odr : %d\n", get_self_wake_up_config.acc_odr);
-    printf("get_self_wake_up_config.acc_bwp : %d\n", get_self_wake_up_config.acc_bwp);
-    printf("get_self_wake_up_config.acc_perf_mode : %d\n", get_self_wake_up_config.acc_perf_mode);
 
     /* Map hardware interrupt pin configurations */
     rslt = bma5_get_int_conf(&int_config, n_ints, &dev);
@@ -99,22 +106,38 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_ints, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
+    printf("\nInterrupt Configurations\n");
+    printf("Int Mode: %s\t\n", enum_to_string(BMA5_INT2_MODE_LATCHED));
+    printf("Int OD: %s\t\n", enum_to_string(BMA5_INT2_OD_PUSH_PULL));
+    printf("Int Level: %s\t\n", enum_to_string(BMA5_INT2_LVL_ACTIVE_HIGH));
+
     rslt = bma580_get_int_map(&int_map, &dev);
     bma5_check_rslt("bma580_get_int_map", rslt);
 
     int_map.gen_int1_int_map = BMA580_GEN_INT1_INT_MAP_INT2;
     int_map.gen_int2_int_map = BMA580_GEN_INT2_INT_MAP_INT2;
     int_map.self_wake_up_int_map = BMA580_SELF_WAKE_UP_INT_MAP_INT2;
+
     rslt = bma580_set_int_map(&int_map, &dev);
     bma5_check_rslt("bma580_set_int_map", rslt);
+
+    printf("\nGeneric Int Configurations\n");
+    printf("Gen Int1 Map: %s\t\n", enum_to_string(BMA580_GEN_INT1_INT_MAP_INT2));
+    printf("Gen Int2 Map: %s\t\n", enum_to_string(BMA580_GEN_INT2_INT_MAP_INT2));
+    printf("Self Wake Up Map: %s\t\n", enum_to_string(BMA580_SELF_WAKE_UP_INT_MAP_INT2));
 
     rslt = bma580_get_feat_eng_gpr_1(&gpr_1, &dev);
     bma5_check_rslt("bma580_get_feat_eng_gpr_1", rslt);
 
-    gpr_1.gen_int1_data_src = BMA580_GEN_INT1_DATA_SRC_DATA_SRC_3;
+    gpr_1.gen_int1_data_src = BMA580_GEN_INT1_DATA_SRC_DATA_SRC_4;
 
     rslt = bma580_set_feat_eng_gpr_1(&gpr_1, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_1", rslt);
+
+    if (rslt == BMA5_OK)
+    {
+        printf("\nGeneric Interrupt 1 data source set\n");
+    }
 
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
@@ -134,6 +157,11 @@ int main(void)
     rslt = bma580_set_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_0", rslt);
 
+    if (rslt == BMA5_OK)
+    {
+        printf("\nGeneric Interrupt 1, Generic Interrupt 2 and Self wake-up enabled\n");
+    }
+
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
 
@@ -147,24 +175,41 @@ int main(void)
     rslt = bma580_get_int_status(&int_status, n_status, &dev);
     bma5_check_rslt("bma580_get_int_status", rslt);
 
-    rslt = bma580_get_int_status(&int_status, n_status, &dev);
-    bma5_check_rslt("bma580_get_int_status", rslt);
-
     printf("\nMove the board and keep idle and do the same for 5 to 10 times continuously\n");
-    printf(
-        "In motion self wake-up state should be normal and in idle self wake-up state should be in low power mode\n\n");
+    printf("In motion self wake-up state should be normal and in idle self wake-up state should be in low power mode\n");
 
     while (loop > 0)
     {
         rslt = bma580_get_int_status(&int_status, n_status, &dev);
         bma5_check_rslt("bma580_get_int_status", rslt);
 
-        if (int_status.int_status.gen_int1_int_status == BMA5_ENABLE)
+        /* Check for the interrupt status */
+        if (int_status.int_status.gen_int1_int_status == BMA5_ENABLE ||
+            int_status.int_status.gen_int2_int_status == BMA5_ENABLE ||
+            int_status.int_status.self_wake_up_int_status == BMA5_ENABLE)
         {
             rslt = bma580_set_int_status(&int_status, n_status, &dev);
             bma5_check_rslt("bma580_set_int_status", rslt);
 
-            printf("\nInterrupt received : Generic Interrupt 1\n");
+            rslt = bma5_get_acc_conf(&acc_conf, &dev);
+            bma5_check_rslt("bma580_get_int_status", rslt);
+
+            printf("\nInterrupt received:\n");
+
+            if (int_status.int_status.gen_int1_int_status == BMA5_ENABLE)
+            {
+                printf("Generic Interrupt 1\n");
+            }
+
+            if (int_status.int_status.gen_int2_int_status == BMA5_ENABLE)
+            {
+                printf("Generic Interrupt 2\n");
+            }
+
+            if (int_status.int_status.self_wake_up_int_status == BMA5_ENABLE)
+            {
+                printf("Self wake-up\n");
+            }
 
             rslt = bma580_get_feat_eng_gpr_2(&gpr_2, &dev);
             bma5_check_rslt("bma580_get_feat_eng_gpr_2", rslt);
@@ -172,61 +217,12 @@ int main(void)
             printf("gen_int1_stat : %d\n", gpr_2.gen_int1_stat);
             printf("gen_int2_stat : %d\n", gpr_2.gen_int2_stat);
             printf("self_wake_up_stat : %d\n", gpr_2.self_wake_up_stat);
+            printf("Self Wake Up Mode: %s\n",
+                   (gpr_2.self_wake_up_stat ==
+                    BMA580_SELF_WAKE_UP_STAT_LOW_POWER) ? "Low Power" : "Normal (High Performance Mode)");
 
-            loop--;
-        }
-
-        if (int_status.int_status.gen_int2_int_status == BMA5_ENABLE)
-        {
-            rslt = bma580_set_int_status(&int_status, n_status, &dev);
-            bma5_check_rslt("bma580_set_int_status", rslt);
-
-            printf("\nInterrupt received : Generic Interrupt 2\n");
-
-            rslt = bma580_get_feat_eng_gpr_2(&gpr_2, &dev);
-            bma5_check_rslt("bma580_get_feat_eng_gpr_2", rslt);
-
-            printf("gen_int1_stat : %d\n", gpr_2.gen_int1_stat);
-            printf("gen_int2_stat : %d\n", gpr_2.gen_int2_stat);
-            printf("self_wake_up_stat : %d\n", gpr_2.self_wake_up_stat);
-
-            loop--;
-        }
-
-        if ((int_status.int_status.gen_int1_int_status == BMA5_ENABLE) &&
-            (int_status.int_status.gen_int2_int_status == BMA5_ENABLE))
-        {
-            rslt = bma580_set_int_status(&int_status, n_status, &dev);
-            bma5_check_rslt("bma580_set_int_status", rslt);
-
-            printf("\nInterrupt received : Generic Interrupt 1 and Generic Interrupt 2\n");
-
-            rslt = bma580_get_feat_eng_gpr_2(&gpr_2, &dev);
-            bma5_check_rslt("bma580_get_feat_eng_gpr_2", rslt);
-
-            printf("gen_int1_stat : %d\n", gpr_2.gen_int1_stat);
-            printf("gen_int2_stat : %d\n", gpr_2.gen_int2_stat);
-            printf("self_wake_up_stat : %d\n", gpr_2.self_wake_up_stat);
-
-            loop--;
-        }
-
-        rslt = bma580_get_int_status(&int_status, n_status, &dev);
-        bma5_check_rslt("bma580_get_int_status", rslt);
-
-        if (int_status.int_status.self_wake_up_int_status & BMA5_ENABLE)
-        {
-            rslt = bma580_set_int_status(&int_status, n_status, &dev);
-            bma5_check_rslt("bma580_set_int_status", rslt);
-
-            printf("\nInterrupt received : Self wake-up\n");
-
-            rslt = bma580_get_feat_eng_gpr_2(&gpr_2, &dev);
-            bma5_check_rslt("bma580_get_feat_eng_gpr_2", rslt);
-
-            printf("gen_int1_stat : %d\n", gpr_2.gen_int1_stat);
-            printf("gen_int2_stat : %d\n", gpr_2.gen_int2_stat);
-            printf("self_wake_up_stat : %d\n", gpr_2.self_wake_up_stat);
+            printf("Accel Config Power Mode: %s\n",
+                   (acc_conf.power_mode == BMA580_POWER_MODE_LOW) ? "Low Power" : "High Performance Mode");
 
             loop--;
         }

@@ -46,9 +46,11 @@ int main(void)
     struct bma5_sensor_status status;
     uint8_t temperature = 0;
     int8_t temp_celsius = 0;
-    enum bma5_context context;
+    uint8_t limit = 50;
 
     /* Assign context parameter selection */
+    enum bma5_context context;
+
     context = BMA5_HEARABLE;
 
     /* Interface reference is given as a parameter
@@ -60,7 +62,7 @@ int main(void)
 
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     /* Get temperature config */
     rslt = bma5_get_temp_conf(&config, &dev);
@@ -74,14 +76,20 @@ int main(void)
     rslt = bma5_set_temp_conf(&config, &dev);
     bma5_check_rslt("bma5_set_temp_conf", rslt);
 
-    printf("\nCount, Temparature data\n");
+    printf("\nTemp Configurations\n");
+    printf("Temp Rate: %s\n", enum_to_string(BMA5_TEMP_RATE_HZ_25));
+    printf("Temp Meas Src: %s\n", enum_to_string(BMA5_TEMP_MEAS_SRC_TMP_INT));
+    printf("Temp Ext Sel: %s\n", enum_to_string(BMA5_TEMP_EXT_SEL_INT2));
 
-    while (loop < 50)
+    printf("\nCount, Temp\n");
+
+    while (loop < limit)
     {
         /* Get temperature data ready status */
         rslt = bma5_get_sensor_status(&status, &dev);
         bma5_check_rslt("bma5_get_sensor_status", rslt);
 
+        /* Check if temperature data is ready */
         if (status.temperature_rdy & BMA5_ENABLE)
         {
             rslt = bma5_set_sensor_status(&status, &dev);
@@ -96,7 +104,7 @@ int main(void)
                 temp_celsius = (int8_t)(temperature + 23);
             }
 
-            printf("%d,  \t%d(Deg C)\n", loop, temp_celsius);
+            printf("%d \t%d(Deg C)\n", loop, temp_celsius);
 
             loop++;
         }

@@ -55,12 +55,11 @@ int main(void)
     struct bma580_feat_eng_gpr_2 config;
     struct bma580_vad_config vad_config, get_vad_config;
 
-    enum bma5_context context;
-
     int_config.int_src = BMA5_INT_2;
     int_status.int_src = BMA580_INT_STATUS_INT2;
 
     /* Assign context parameter selection */
+    enum bma5_context context;
     context = BMA5_HEARABLE;
 
     /* Interface reference is given as a parameter
@@ -70,9 +69,10 @@ int main(void)
     rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
+    /* Initialize the sensor */
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     rslt = bma580_get_vad_config(&vad_config, &dev);
     bma5_check_rslt("bma580_get_vad_config", rslt);
@@ -102,6 +102,11 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_ints, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
+    printf("Int Configurations:\n");
+    printf("Int mode: %s\t\n", enum_to_string(BMA5_INT2_MODE_PULSED_LONG));
+    printf("Int OD: %s\t\n", enum_to_string(BMA5_INT2_OD_PUSH_PULL));
+    printf("Int LVL: %s\t\n", enum_to_string(BMA5_INT2_LVL_ACTIVE_HIGH));
+
     rslt = bma580_get_int_map(&int_map, &dev);
     bma5_check_rslt("bma580_get_int_map", rslt);
 
@@ -118,6 +123,11 @@ int main(void)
     rslt = bma580_set_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_0", rslt);
 
+    if (rslt == BMA5_OK)
+    {
+        printf("VAD enabled\n");
+    }
+
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
 
@@ -128,9 +138,11 @@ int main(void)
 
     for (;;)
     {
+        /* Read the hardware interrupt pin 2 status */
         rslt = bma580_get_int_status(&int_status, n_status, &dev);
         bma5_check_rslt("bma580_get_int_status", rslt);
 
+        /* Checking interrupt status to check VAD detection */
         if (int_status.int_status.vad_int_status & BMA5_ENABLE)
         {
             printf("VAD interrupt occurred\n");
