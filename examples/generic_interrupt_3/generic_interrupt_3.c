@@ -45,12 +45,22 @@ int main(void)
     uint8_t n_ints = 1;
     uint8_t n_status = 1;
 
+    /* Variable to hold interrupt mapping, mapping to hardware interrupt pin 1 on sensor */
     struct bma580_int_map int_map;
+
+    /* Variable to hold configurations related to interrupt pin 1 */
     struct bma5_int_conf_types int_config;
+
+    /* Variable to hold generic interrupt 3 configuation */
     struct bma580_generic_interrupt_types conf, set_conf;
+
+    /* Variable to store interrupt status */
     struct bma580_int_status_types int_status;
+
+    /* Variable to store Feature engine general purpose register 0 */
     struct bma580_feat_eng_gpr_0 gpr_0;
 
+    /*Generic interrupt configurations */
     int_config.int_src = BMA5_INT_1;
     int_status.int_src = BMA580_INT_STATUS_INT1;
     conf.generic_interrupt = BMA580_GEN_INT_3;
@@ -64,12 +74,13 @@ int main(void)
      *         For I2C : BMA5_I2C_INTF
      *         For SPI : BMA5_SPI_INTF
      */
-    rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
+    rslt = bma5_interface_init(&dev, BMA5_I2C_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
+    /* Initialize BMA580 */
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     printf("Default configurations\n");
     rslt = bma580_get_generic_int_config(&conf, n_ints, &dev);
@@ -104,6 +115,20 @@ int main(void)
     rslt = bma580_set_generic_int_config(&set_conf, n_ints, &dev);
     bma5_check_rslt("bma580_set_generic_int_config", rslt);
 
+    printf("\nSet Generic interrupt 3 configurations\n");
+    printf("\nslope_thres 0x%x\n", set_conf.gen_int.slope_thres);
+    printf("comb_sel 0x%x\n", set_conf.gen_int.comb_sel);
+    printf("axis_sel 0x%x\n", set_conf.gen_int.axis_sel);
+    printf("hysteresis 0x%x\n", set_conf.gen_int.hysteresis);
+    printf("criterion_sel 0x%x\n", set_conf.gen_int.criterion_sel);
+    printf("acc_ref_up 0x%x\n", set_conf.gen_int.acc_ref_up);
+    printf("duration 0x%x\n", set_conf.gen_int.duration);
+    printf("wait_time 0x%x\n", set_conf.gen_int.wait_time);
+    printf("quiet_time 0x%x\n", set_conf.gen_int.quiet_time);
+    printf("ref_acc_x 0x%x\n", set_conf.gen_int.ref_acc_x);
+    printf("ref_acc_y 0x%x\n", set_conf.gen_int.ref_acc_y);
+    printf("ref_acc_z 0x%x\n", set_conf.gen_int.ref_acc_z);
+
     rslt = bma580_set_generic_int_config(&set_conf, n_ints, &dev);
     bma5_check_rslt("bma580_set_generic_int_config", rslt);
 
@@ -114,6 +139,11 @@ int main(void)
 
     rslt = bma580_set_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_0", rslt);
+
+    if (rslt == BMA5_OK)
+    {
+        printf("\nGeneric interrupt 3 enabled\n");
+    }
 
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
@@ -145,13 +175,20 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_ints, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
+    printf("\nInt Configurations\n");
+    printf("Int1 mode: %s\n", enum_to_string(BMA5_INT1_MODE_LATCHED));
+    printf("Int1 OD: %s\n", enum_to_string(BMA5_INT1_OD_PUSH_PULL));
+    printf("Int1 Level: %s\n", enum_to_string(BMA5_INT1_LVL_ACTIVE_HIGH));
+
     printf("Drop the board to get generic interrupt 3 interrupt\n");
 
     for (;;)
     {
+        /* Read the interrupt status */
         rslt = bma580_get_int_status(&int_status, n_status, &dev);
         bma5_check_rslt("bma580_get_int_status", rslt);
 
+        /* Check if generic interrupt 3 interrupt occurred */
         if (int_status.int_status.gen_int3_int_status & BMA5_ENABLE)
         {
             rslt = bma580_set_int_status(&int_status, n_status, &dev);

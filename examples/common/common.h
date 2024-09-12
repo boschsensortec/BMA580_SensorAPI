@@ -43,6 +43,14 @@ extern "C" {
 #include <stdio.h>
 #include "bma5.h"
 
+/******************************************************************************/
+/*!                       Macro definitions                                   */
+
+/*! Enum to string converter*/
+#ifndef enum_to_string
+#define enum_to_string(a)  #a
+#endif
+
 /***************************************************************************/
 
 /*!                 User function prototypes

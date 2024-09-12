@@ -99,7 +99,7 @@ int main(void)
      *         For I2C : BMA5_I2C_INTF
      *         For SPI : BMA5_SPI_INTF
      */
-    rslt = bma5_interface_init(&dev, BMA5_I2C_INTF, context);
+    rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
     rslt = bma580_init(&dev);

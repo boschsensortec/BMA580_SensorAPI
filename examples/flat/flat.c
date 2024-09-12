@@ -81,7 +81,7 @@ int main(void)
     /* Initialize the BMA5 device instance */
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     /* Updating the generic interrupt 1 and 2 configuration for face up and face down detection */
     rslt = bma580_get_generic_int_config(conf, n_ints, &dev);
@@ -133,6 +133,11 @@ int main(void)
     rslt = bma580_set_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_0", rslt);
 
+    if (rslt == BMA5_OK)
+    {
+        printf("\nGeneric Interrupt 1 and 2 enabled\n");
+    }
+
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
 
@@ -161,7 +166,11 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_ints_conf, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
-    printf("Keep the board in Flat postion to genereate interrupt\n");
+    printf("\nInt1 mode: %s\n", enum_to_string(BMA5_INT1_MODE_LATCHED));
+    printf("Int1 OD: %s\n", enum_to_string(BMA5_INT1_OD_PUSH_PULL));
+    printf("Int1 Level: %s\n", enum_to_string(BMA5_INT1_LVL_ACTIVE_HIGH));
+
+    printf("\nKeep the board in Flat position to generate interrupt\n");
 
     for (;;)
     {
@@ -176,7 +185,7 @@ int main(void)
             rslt = bma580_set_int_status(&int_status, n_status, &dev);
             bma5_check_rslt("bma580_set_int_status", rslt);
 
-            printf("Flat orientation detected\n");
+            printf("\nFlat orientation detected\n");
             break;
 
         }

@@ -70,6 +70,9 @@ uint16_t fifo_accel_frame_length = ACCEL_FRAME_LEN;
 /*! Number of bytes of FIFO data */
 uint8_t fifo_data[BMA580_FIFO_RAW_DATA_BUFFER_SIZE] = { 0 };
 
+/* Set FIFO water-mark level */
+uint16_t fifo_watermark_level = WATERMARK_LEVEL;
+
 /*! Array of accelerometer and sensortime frames
  * Array size same as fifo_accel_frame_length */
 struct bma5_sens_fifo_axes_data_8_bit fifo_acc_data[ACCEL_FRAME_LEN];
@@ -124,9 +127,6 @@ static int8_t get_fifo_full_8_bit_data(struct bma5_sens_fifo_axes_data_8_bit *fi
  */
 static float lsb_to_ms2(int16_t val, float g_range, uint8_t bit_width);
 
-/* Set FIFO water-mark level */
-uint16_t fifo_watermark_level = WATERMARK_LEVEL;
-
 /******************************************************************************/
 int main(void)
 {
@@ -138,21 +138,21 @@ int main(void)
     /* Initialize FIFO frame structure */
     struct bma5_fifo_frame fifoframe = { 0 };
 
+    /* Assign context parameter selection */
     enum bma5_context context;
 
-    /* Assign context parameter selection */
     context = BMA5_SMARTPHONE;
 
     /* Interface reference is given as a parameter
      *         For I2C : BMA5_I2C_INTF
      *         For SPI : BMA5_SPI_INTF
      */
-    rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
+    rslt = bma5_interface_init(&dev, BMA5_I2C_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     rslt = bma580_get_int_map(&int_map, &dev);
     bma5_check_rslt("bma580_get_int_map", rslt);
@@ -229,26 +229,31 @@ static int8_t get_accel_and_int_settings(struct bma5_dev *dev)
     rslt = bma5_set_acc_conf(&acc_cfg, dev);
     bma5_check_rslt("bma5_get_acc_conf", rslt);
 
+    printf("Accel configurations\n");
+    printf("ODR : %s\t\n", enum_to_string(BMA5_ACC_ODR_HZ_6K4));
+    printf("Bandwidth : %s\t\n", enum_to_string(BMA5_ACC_BWP_NORM_AVG4));
+    printf("Power mode : %s\t\n", enum_to_string(BMA5_POWER_MODE_HPM));
+    printf("Range : %s\t\n", enum_to_string(BMA5_ACC_RANGE_MAX_2G));
+    printf("IIR RO : %s\t\n", enum_to_string(BMA5_ACC_IIR_RO_DB_60));
+    printf("Noise mode : %s\t\n", enum_to_string(BMA5_NOISE_MODE_LOWER_POWER));
+    printf("Auto Int clear : %s\t\n", enum_to_string(BMA5_ACC_DRDY_INT_AUTO_CLEAR_DISABLED));
+
     /* Enable accel */
     sensor_ctrl = BMA5_SENSOR_CTRL_ENABLE;
 
     rslt = bma5_set_acc_conf_0(sensor_ctrl, dev);
     bma5_check_rslt("bma5_set_acc_conf_0", rslt);
 
+    if (rslt == BMA5_OK)
+    {
+        printf("\nAccel is enabled\n");
+    }
+
     rslt = bma5_get_acc_conf_0(&sensor_ctrl, dev);
     bma5_check_rslt("bma5_set_acc_conf_0", rslt);
 
     rslt = bma5_get_acc_conf(&get_acc_cfg, dev);
     bma5_check_rslt("bma5_get_acc_conf", rslt);
-
-    printf("Sensor CTRL : %d\n", sensor_ctrl);
-    printf("ODR : %d\n", get_acc_cfg.acc_odr);
-    printf("BW : %d\n", get_acc_cfg.acc_bwp);
-    printf("Power mode : %d\n", get_acc_cfg.power_mode);
-    printf("Range : %d\n", get_acc_cfg.acc_range);
-    printf("IIR RO : %d\n", get_acc_cfg.acc_iir_ro);
-    printf("Noise mode : %d\n", get_acc_cfg.noise_mode);
-    printf("Auto Int clear : %d\n", get_acc_cfg.acc_drdy_int_auto_clear);
 
     rslt = bma5_get_int_conf(&int_config, n_ints, dev);
     bma5_check_rslt("bma5_get_int_conf", rslt);
@@ -259,6 +264,11 @@ static int8_t get_accel_and_int_settings(struct bma5_dev *dev)
 
     rslt = bma5_set_int_conf(&int_config, n_ints, dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
+
+    printf("\nInt Configurations\n\n");
+    printf("Int mode : %s\t\n", enum_to_string(BMA5_INT1_MODE_LATCHED));
+    printf("Int od : %s\t\n", enum_to_string(BMA5_INT1_OD_PUSH_PULL));
+    printf("Int level : %s\t\n", enum_to_string(BMA5_INT1_LVL_ACTIVE_HIGH));
 
     return rslt;
 }
@@ -276,14 +286,14 @@ static int8_t get_fifo_conf(const struct bma5_fifo_conf *fifo_conf, struct bma5_
     rslt = bma5_set_fifo_conf(fifo_conf, dev);
     bma5_check_rslt("bma5_set_fifo_conf", rslt);
 
-    printf("\nSet FIFO conf\n");
-    printf("fifo en %d\n", fifo_conf->fifo_cfg);
-    printf("fifo_x_en %d\n", fifo_conf->fifo_acc_x);
-    printf("fifo_y_en %d\n", fifo_conf->fifo_acc_y);
-    printf("fifo_z_en %d\n", fifo_conf->fifo_acc_z);
-    printf("fifo_compression_en %d\n", fifo_conf->fifo_compression);
-    printf("fifo_sensor_time %d\n", fifo_conf->fifo_sensor_time);
-    printf("fifo_size %d\n", fifo_conf->fifo_size);
+    printf("\nFIFO conf\n");
+    printf("fifo en %s\t\n", enum_to_string(BMA5_FIFO_CFG_ENABLE));
+    printf("fifo_x_en %s\t\n", enum_to_string(BMA5_FIFO_ACC_X_ENABLE));
+    printf("fifo_y_en %s\t\n", enum_to_string(BMA5_FIFO_ACC_Y_ENABLE));
+    printf("fifo_z_en %s\t\n", enum_to_string(BMA5_FIFO_ACC_Z_ENABLE));
+    printf("fifo_compression_en %s\t\n", enum_to_string(BMA5_FIFO_COMPRESSION_ACC_8BIT));
+    printf("fifo_sensor_time %s\t\n", enum_to_string(BMA5_FIFO_SENSOR_TIME_EACH_FRAME));
+    printf("fifo_size %s\t\n", enum_to_string(BMA5_FIFO_SIZE_MAX_512_BYTES));
 
     /* Get FIFO configuration register */
     rslt = bma5_get_fifo_conf(&read_fifo_conf, dev);
@@ -314,13 +324,14 @@ static int8_t get_fifo_full_8_bit_data(struct bma5_sens_fifo_axes_data_8_bit *fi
     struct bma580_int_status_types int_status = { 0 };
     uint8_t loop = 0;
     uint16_t idx = 0;
+    uint8_t iteration = 3;
     float x = 0, y = 0, z = 0;
 
     int_status.int_src = BMA580_INT_STATUS_INT1;
 
-    printf("Get FIFO data");
+    printf("\nGet FIFO data");
 
-    while (loop < 3)
+    while (loop < iteration)
     {
         /* Get fifo full interrupt 2 status */
         rslt = bma580_get_int_status(&int_status, n_status, dev);
@@ -354,7 +365,7 @@ static int8_t get_fifo_full_8_bit_data(struct bma5_sens_fifo_axes_data_8_bit *fi
                     z = lsb_to_ms2(fifo_accel_data[idx].z, (float)2, BMA5_8_BIT_RESOLUTION);
 
                     /* Print the data in m/s2 */
-                    printf("%d,  %d,  %d,  %d,  %4.2f,  %4.2f,  %4.2f,  %.4lf s\n",
+                    printf("%4d  %11d  %11d  %11d  %9.2f  %9.2f  %9.2f  %10.4lf s\n",
                            idx,
                            fifo_accel_data[idx].x,
                            fifo_accel_data[idx].y,

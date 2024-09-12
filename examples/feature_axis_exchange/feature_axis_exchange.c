@@ -57,6 +57,7 @@ int main(void)
     uint8_t n_status = 1;
     uint8_t gpr_ctrl_host = BMA5_ENABLE;
 
+    /*Structure to store the feature axis configurations */
     struct bma5_dev dev;
     struct bma580_feat_axis conf, get_conf;
     struct bma580_int_map int_map = { 0 };
@@ -66,9 +67,14 @@ int main(void)
     struct bma580_feat_eng_gpr_0 gpr_0;
     struct bma5_feat_eng_status feat_eng_status;
 
+    /*Generic interrupt 1 configurations */
     gen_conf.generic_interrupt = BMA580_GEN_INT_1;
     set_gen_conf.generic_interrupt = BMA580_GEN_INT_1;
+
+    /* Variable to hold configurations related to interrupt pin */
     int_status.int_src = BMA580_INT_STATUS_INT1;
+
+    /* Mapping to hardware interrupt pin on sensor */
     int_config.int_src = BMA5_INT_1;
 
     /* Assign context parameter selection */
@@ -79,16 +85,18 @@ int main(void)
      *         For I2C : BMA5_I2C_INTF
      *         For SPI : BMA5_SPI_INTF
      */
-    rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
+    rslt = bma5_interface_init(&dev, BMA5_I2C_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
+    /*Initialize the device */
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     rslt = bma5_get_feat_eng_status(&feat_eng_status, &dev);
     bma5_check_rslt("bma5_get_feat_eng_status", rslt);
 
+    /*Print the feature engine status */
     printf("feat_eng_status.feat_eng_gpr_update_pending : %d\n", feat_eng_status.feat_eng_gpr_update_pending);
     printf("feat_eng_status.feat_eng_halted : %d\n", feat_eng_status.feat_eng_halted);
     printf("feat_eng_status.feat_eng_running : %d\n", feat_eng_status.feat_eng_running);
@@ -105,6 +113,11 @@ int main(void)
     rslt = bma580_set_feature_axis_config(&conf, &dev);
     bma5_check_rslt("bma580_set_feature_axis_config", rslt);
 
+    if (rslt == BMA5_OK)
+    {
+        printf("Feature axis configurations set successfully\n");
+    }
+
     rslt = bma580_get_feature_axis_config(&get_conf, &dev);
     bma5_check_rslt("bma580_get_feature_axis_config", rslt);
 
@@ -113,6 +126,7 @@ int main(void)
     rslt = bma580_get_generic_int_config(&gen_conf, n_ints, &dev);
     bma5_check_rslt("bma580_get_generic_int_config", rslt);
 
+    /*Set Generic interrupt 1 configurations */
     set_gen_conf.gen_int.slope_thres = 0xA;
     set_gen_conf.gen_int.comb_sel = 0x0;
     set_gen_conf.gen_int.axis_sel = BMA580_FEAT_AXIS_EX_SEL_Z;
@@ -149,10 +163,16 @@ int main(void)
     rslt = bma580_get_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_get_feat_eng_gpr_0", rslt);
 
+    /*Enable generic interrupt 1 */
     gpr_0.gen_int1_en = BMA5_ENABLE;
 
     rslt = bma580_set_feat_eng_gpr_0(&gpr_0, &dev);
     bma5_check_rslt("bma580_set_feat_eng_gpr_0", rslt);
+
+    if (rslt == BMA5_OK)
+    {
+        printf("Generic interrupt 1 enabled\n");
+    }
 
     rslt = bma5_set_regs(BMA5_REG_FEAT_ENG_GPR_CTRL, &gpr_ctrl_host, 1, &dev);
     bma5_check_rslt("bma5_set_regs", rslt);
@@ -181,13 +201,20 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_ints, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
+    printf("Int configurations:\n");
+    printf("Int mode : %s\t\n", enum_to_string(BMA5_INT1_MODE_LATCHED));
+    printf("Int OD : %s\t\n", enum_to_string(BMA5_INT1_OD_PUSH_PULL));
+    printf("Int level : %s\t\n", enum_to_string(BMA5_INT1_LVL_ACTIVE_HIGH));
+
     printf("\nShake the board to get generic interrupt 1 interrupt\n");
 
     for (;;)
     {
+        /*Get the interrupt status */
         rslt = bma580_get_int_status(&int_status, n_status, &dev);
         bma5_check_rslt("bma580_get_int_status", rslt);
 
+        /*Check if generic interrupt 1 interrupt occurred */
         if (int_status.int_status.gen_int1_int_status & BMA5_ENABLE)
         {
             rslt = bma580_set_int_status(&int_status, n_ints, &dev);
@@ -212,32 +239,32 @@ static void feature_axis_selection(const struct bma580_feat_axis *conf)
     if ((conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_DEFAULT_0) ||
         (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_DEFAULT_6) || (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_DEFAULT_7))
     {
-        printf("Selected axis is XYZ\n");
+        printf("Selected axis : XYZ\n");
     }
 
     if (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_YXZ)
     {
-        printf("Selected axis is YXZ\n");
+        printf("Selected axis : YXZ\n");
     }
 
     if (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_XZY)
     {
-        printf("Selected axis is XZY\n");
+        printf("Selected axis : XZY\n");
     }
 
     if (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_ZXY)
     {
-        printf("Selected axis is ZXY\n");
+        printf("Selected axis : ZXY\n");
     }
 
     if (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_YZX)
     {
-        printf("Selected axis is YZX\n");
+        printf("Selected axis : YZX\n");
     }
 
     if (conf->feat_axis_ex == BMA580_FEAT_AXIS_EX_ZYX)
     {
-        printf("Selected axis is ZYX\n");
+        printf("Selected axis : ZYX\n");
     }
 
     if (conf->feat_x_inv == BMA580_FEAT_X_INV_DEFAULT)

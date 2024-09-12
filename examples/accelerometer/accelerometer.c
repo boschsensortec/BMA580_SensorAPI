@@ -67,7 +67,7 @@ int main(void)
     uint8_t n_status = 1;
     uint8_t loop = 0;
     float x = 0, y = 0, z = 0;
-
+    uint8_t limit = 50;
     struct bma5_acc_conf acc_cfg;
     struct bma580_int_map int_map;
     struct bma5_accel sens_data;
@@ -88,12 +88,12 @@ int main(void)
      *         For I2C : BMA5_I2C_INTF
      *         For SPI : BMA5_SPI_INTF
      */
-    rslt = bma5_interface_init(&dev, BMA5_SPI_INTF, context);
+    rslt = bma5_interface_init(&dev, BMA5_I2C_INTF, context);
     bma5_check_rslt("bma5_interface_init", rslt);
 
     rslt = bma580_init(&dev);
     bma5_check_rslt("bma580_init", rslt);
-    printf("BMA580 Chip ID is 0x%X\n", dev.chip_id);
+    printf("Chip ID :0x%X\n", dev.chip_id);
 
     rslt = bma580_get_int_map(&int_map, &dev);
     bma5_check_rslt("bma580_get_int_map", rslt);
@@ -123,11 +123,25 @@ int main(void)
     rslt = bma5_set_acc_conf(&acc_cfg, &dev);
     bma5_check_rslt("bma5_set_acc_conf", rslt);
 
+    printf("Accel Configurations:\n");
+    printf("ODR : %s\t\n", enum_to_string(BMA5_ACC_ODR_HZ_25));
+    printf("BWP : %s\t\n", enum_to_string(BMA5_ACC_BWP_NORM_AVG4));
+    printf("Power mode : %s\t\n", enum_to_string(BMA5_POWER_MODE_HPM));
+    printf("Range : %s\t\n", enum_to_string(BMA5_ACC_RANGE_MAX_2G));
+    printf("IIR : %s\t\n", enum_to_string(BMA5_ACC_IIR_RO_DB_40));
+    printf("Noise mode : %s\t\n", enum_to_string(BMA5_NOISE_MODE_LOWER_POWER));
+    printf("DRDY auto clear : %s\t\n", enum_to_string(BMA5_ACC_DRDY_INT_AUTO_CLEAR_ENABLED));
+
     /* Enable accel */
     sensor_ctrl = BMA5_SENSOR_CTRL_ENABLE;
 
     rslt = bma5_set_acc_conf_0(sensor_ctrl, &dev);
     bma5_check_rslt("bma5_set_acc_conf_0", rslt);
+
+    if (rslt == BMA5_OK)
+    {
+        printf("Accel enabled\n");
+    }
 
     /* Map hardware interrupt pin configurations */
     rslt = bma5_get_int_conf(&int_config, n_conf, &dev);
@@ -140,11 +154,16 @@ int main(void)
     rslt = bma5_set_int_conf(&int_config, n_conf, &dev);
     bma5_check_rslt("bma5_set_int_conf", rslt);
 
+    printf("Interrupt configurations:\n");
+    printf("Int mode : %s\t\n", enum_to_string(BMA5_INT1_MODE_LATCHED));
+    printf("Int OD : %s\t\n", enum_to_string(BMA5_INT1_OD_PUSH_PULL));
+    printf("Int level : %s\t\n", enum_to_string(BMA5_INT1_LVL_ACTIVE_HIGH));
+
     printf("Accelerometer data in 2G range\n");
 
     printf("\nCount, Accel_LSB_X, Accel_LSB_Y, Accel_LSB_Z, Acc_ms2_X, Acc_ms2_Y, Acc_ms2_Z\n");
 
-    while (loop < 50)
+    while (loop < limit)
     {
         /* Get accel data ready status */
         rslt = bma5_get_sensor_status(&status, &dev);
@@ -175,7 +194,7 @@ int main(void)
                 z = lsb_to_ms2(sens_data.z, (float)2, BMA5_16_BIT_RESOLUTION);
 
                 /* Print the data in m/s2 */
-                printf("%d,  %d,  %d,  %d,  %4.2f,  %4.2f,  %4.2f\n",
+                printf("%4d  %11d  %11d  %11d  %9.2f  %9.2f  %9.2f\n",
                        loop,
                        sens_data.x,
                        sens_data.y,
