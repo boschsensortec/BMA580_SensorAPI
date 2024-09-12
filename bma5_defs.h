@@ -31,8 +31,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 * @file       bma5_defs.h
-* @date       2024-04-15
-* @version    v4.1.0
+* @date       2024-07-29
+* @version    v4.2.0
 *
 */
 
@@ -421,14 +421,6 @@
 #define BMA5_TEMP_EXT_SEL_MSK                      UINT8_C(0x10)
 #define BMA5_TEMP_EXT_SEL_POS                      UINT8_C(0x04)
 
-/*! Enable temperature dependent sensitivity correction. */
-#define BMA5_TEMP_TCS_MSK                          UINT8_C(0x20)
-#define BMA5_TEMP_TCS_POS                          UINT8_C(0x05)
-
-/*! Enable temperature dependent offset correction. */
-#define BMA5_TEMP_TCO_MSK                          UINT8_C(0x40)
-#define BMA5_TEMP_TCO_POS                          UINT8_C(0x06)
-
 /*! Output enable for INT pin */
 #define BMA5_INT_MODE_MSK                          UINT8_C(0x03)
 #define BMA5_INT_MODE_POS                          UINT8_C(0x00)
@@ -747,14 +739,6 @@
 /* Macros to define the supported temp_ext_sel values */
 #define BMA5_TEMP_EXT_SEL_INT1                     UINT8_C(0x00)        /*! interrupt pin INT1 */
 #define BMA5_TEMP_EXT_SEL_INT2                     UINT8_C(0x01)        /*! interrupt pin INT2 */
-
-/* Macros to define the supported temp_tcs values */
-#define BMA5_TEMP_TCS_DISABLE                      UINT8_C(0x00)        /*! TCS correction disabled */
-#define BMA5_TEMP_TCS_ENABLE                       UINT8_C(0x01)        /*! TCS correction enabled */
-
-/* Macros to define the supported temp_tco values */
-#define BMA5_TEMP_TCO_DISABLE                      UINT8_C(0x00)        /*! TCO correction disabled */
-#define BMA5_TEMP_TCO_ENABLE                       UINT8_C(0x01)        /*! TCO correction enabled */
 
 /* Macros to define the supported int1_mode values */
 #define BMA5_INT1_MODE_OFF                         UINT8_C(0x00)        /*! Output disabled. */
@@ -1156,12 +1140,6 @@ struct bma5_temp_conf
 
     /*! Select the external pin as source for temperature ADC. */
     uint8_t temp_ext_sel;
-
-    /*! Enable temperature dependent sensitivity correction. */
-    uint8_t temp_tcs;
-
-    /*! Enable temperature dependent offset correction. */
-    uint8_t temp_tco;
 
 };
 

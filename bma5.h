@@ -31,8 +31,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 * @file       bma5.h
-* @date       2024-04-15
-* @version    v4.1.0
+* @date       2024-07-29
+* @version    v4.2.0
 *
 */
 
